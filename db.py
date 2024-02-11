@@ -102,6 +102,6 @@ def load_networks(networks: list, task_id: int, user_id: int):
 
 def close_dead_tasks():
     cur = database.cursor()
-    cur.execute("UPDATE subtasks SET processing_by=NULL, last_ping=NULL, progress=NULL WHERE last_ping IS NOT NULL AND last_ping!=-1 AND last_ping < (?)", (int(time.time()) - 30, ))
+    cur.execute("UPDATE subtasks SET processing_by=NULL, last_ping=NULL, progress=NULL WHERE last_ping IS NOT NULL AND last_ping!=-1 AND last_ping < (?)", (int(time.time()) - 60, ))
     cur.close()
     database.commit()
