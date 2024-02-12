@@ -1,22 +1,28 @@
 import sqlite3
 import time
 import config
-import bcrypt
 import hashlib
 import random
 import salt
+if config.use_bcrypt:
+    import bcrypt
 
 database = sqlite3.connect(config.sqlite_path, check_same_thread=False)
 
 def get_user(user: str, passw: str):
     cur = database.cursor()
-    passhash = hashlib.sha512((passw + salt.generate_user_salt(user + "@" + passw)).encode()).digest()
+    password_salt = (passw + salt.generate_user_salt(user + "@" + passw)).encode()
+    passhash = hashlib.sha512(password_salt).digest()
     cur.execute("SELECT id,password FROM users WHERE login=(?)", (user, ))
     d = cur.fetchone()
     cur.close()
     if d == None:
         return None
-    if bcrypt.checkpw(passhash, d[1]):
+    if config.use_bcrypt:
+        password_eq = bcrypt.checkpw(passhash, d[1])
+    else:
+        password_eq = passhash == d[1]
+    if password_eq:
         return d[0]
     else:
         return None
@@ -105,3 +111,21 @@ def close_dead_tasks():
     cur.execute("UPDATE subtasks SET processing_by=NULL, last_ping=NULL, progress=NULL WHERE last_ping IS NOT NULL AND last_ping!=-1 AND last_ping < (?)", (int(time.time()) - 60, ))
     cur.close()
     database.commit()
+    
+stats_cache = None
+stats_cache_time = 0
+   
+def get_stats():
+    global stats_cache, stats_cache_time
+    if time.time() - stats_cache_time < 60:
+        return stats_cache
+    cur = database.cursor()
+    cur.execute("SELECT count(*) FROM networks")
+    nets = cur.fetchone()[0]
+    cur.execute("SELECT count(*) FROM subtasks")
+    subtasks = cur.fetchone()[0]
+    cur.execute("SELECT count(*) FROM subtasks WHERE last_ping=-1")
+    completed_subtasks = cur.fetchone()[0]
+    stats_cache = {"networks":nets, "subtasks": subtasks, "completed": completed_subtasks, "percent": (completed_subtasks * 10000 // subtasks) / 100}
+    stats_cache_time = time.time()
+    return stats_cache

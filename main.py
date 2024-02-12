@@ -99,3 +99,7 @@ def closeTask(item: networks):
     if ans["ok"] != False:
         db.load_networks(item.result, item.task_id, usid)
     return JSONResponse(ans)
+    
+@app.get("/stats", response_class=JSONResponse)
+def stats():
+    return JSONResponse(db.get_stats())
