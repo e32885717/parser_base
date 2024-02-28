@@ -1,41 +1,17 @@
 import db
-from fastapi import Depends, FastAPI, Request, Response
+from fastapi import Depends, FastAPI, Header
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Annotated
+from typing import Annotated, Union
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import random
 import string
-import zlib
-from typing import Callable
-from fastapi.routing import APIRoute
+import utils
 
 app = FastAPI()
 
+app.router.route_class = utils.GzipRoute
 
-class GzipRequest(Request):
-    async def body(self) -> bytes:
-        if not hasattr(self, "_body"):
-            body = await super().body()
-            if "gzip" in self.headers.getlist("Content-Encoding"):
-                body = zlib.decompress(body)
-            self._body = body
-        return self._body
-
-
-class GzipRoute(APIRoute):
-    def get_route_handler(self) -> Callable:
-        original_route_handler = super().get_route_handler()
-
-        async def custom_route_handler(request: Request) -> Response:
-            request = GzipRequest(request.scope, request.receive)
-            return await original_route_handler(request)
-
-        return custom_route_handler
-
-app.router.route_class = GzipRoute
-
-security = HTTPBasic()
 tokens = []
 
 def generate_token(user_id):
@@ -52,8 +28,13 @@ def check_token(token):
             return i["user_id"]
     return None
 
+def check_ua(ua):
+    return (ua.find("3wifiparser1.") != -1)
+
 @app.get("/auth", response_class=JSONResponse)
-def auth(credentials: Annotated[HTTPBasicCredentials, Depends(security)]):
+def auth(credentials: Annotated[HTTPBasicCredentials, Depends(HTTPBasic())], user_agent: Annotated[Union[str, None], Header()] = None):
+    if check_ua(user_agent):
+        return {"ok": False, "desc": "old version"}
     u = db.get_user(credentials.username, credentials.password)
     if not(not(u)):
         return JSONResponse({"ok": True, "token": generate_token(u)})
@@ -62,7 +43,9 @@ def auth(credentials: Annotated[HTTPBasicCredentials, Depends(security)]):
     
 
 @app.get("/getFreeTask", response_class=JSONResponse)
-def getFreeTask():
+def getFreeTask(user_agent: Annotated[Union[str, None], Header()] = None):
+    if check_ua(user_agent):
+        return {"ok": False, "desc": "old version"}
     t = db.get_free_subtask()
     if not(t):
         return JSONResponse({"ok": False, "desc": "no more tasks"})
@@ -99,7 +82,15 @@ def closeTask(item: networks):
     if ans["ok"] != False:
         db.load_networks(item.result, item.task_id, usid)
     return JSONResponse(ans)
-    
-@app.get("/stats", response_class=JSONResponse)
+
+class anondata(BaseModel):
+    data: list
+
+@app.post("/anonymousUpload", response_class=JSONResponse)
+def anonymousUpload(item: anondata):
+    db.load_anonymous(item.data)
+    return JSONResponse({"ok": True})
+
+@app.get("/stats", response_class=utils.PrettyJSONResponse)
 def stats():
-    return JSONResponse(db.get_stats())
+    return utils.PrettyJSONResponse(db.get_stats())

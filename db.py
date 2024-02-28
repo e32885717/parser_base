@@ -102,13 +102,19 @@ def load_networks(networks: list, task_id: int, user_id: int):
     cur = database.cursor()
     user_id = int(user_id)
     task_id = int(task_id)
-    cur.executemany(f"INSERT INTO networks VALUES (?,?,?,?,?,?,{task_id},{user_id})", networks)
+    cur.executemany(f"INSERT INTO networks VALUES (?,?,?,?,?,?,?,?,?,{task_id},{user_id},{time.time()})", networks)
+    cur.close()
+    database.commit()
+
+def load_anonymous(networks: list):
+    cur = database.cursor()
+    cur.executemany(f"INSERT INTO anonymous_data VALUES (?,?,?,?,?,?,?,?,?,{time.time()})", networks)
     cur.close()
     database.commit()
 
 def close_dead_tasks():
     cur = database.cursor()
-    cur.execute("UPDATE subtasks SET processing_by=NULL, last_ping=NULL, progress=NULL WHERE last_ping IS NOT NULL AND last_ping!=-1 AND last_ping < (?)", (int(time.time()) - 120, ))
+    cur.execute("UPDATE subtasks SET processing_by=NULL, last_ping=NULL, progress=NULL WHERE last_ping IS NOT NULL AND last_ping!=-1 AND last_ping < (?)", (int(time.time()) - config.task_delete_timeout, ))
     cur.close()
     database.commit()
     
@@ -117,7 +123,7 @@ stats_cache_time = 0
    
 def get_stats():
     global stats_cache, stats_cache_time
-    if time.time() - stats_cache_time < 60:
+    if time.time() - stats_cache_time < 10:
         return stats_cache
     cur = database.cursor()
     cur.execute("SELECT count(*) FROM networks")
@@ -126,6 +132,11 @@ def get_stats():
     subtasks = cur.fetchone()[0]
     cur.execute("SELECT count(*) FROM subtasks WHERE last_ping=-1")
     completed_subtasks = cur.fetchone()[0]
-    stats_cache = {"networks":nets, "subtasks": subtasks, "completed": completed_subtasks, "percent": (completed_subtasks * 10000 // subtasks) / 100}
+    stats_cache = {
+        "networks": nets,
+        "subtasks": subtasks,
+        "completed": completed_subtasks,
+        "percent": (completed_subtasks * 10000 // subtasks) / 100
+    }
     stats_cache_time = time.time()
     return stats_cache
