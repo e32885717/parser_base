@@ -1,5 +1,11 @@
 sqlite_path = "main.db"
-use_bcrypt = True
+
 task_delete_timeout = 120
+
 host = "127.0.0.1"
 port = 8000
+
+use_bcrypt = True
+use_orjson = False
+use_mariadb = False
+user_stats = False

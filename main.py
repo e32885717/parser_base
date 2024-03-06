@@ -1,6 +1,5 @@
 import db
 from fastapi import Depends, FastAPI, Header
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Annotated, Union
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -9,6 +8,12 @@ import string
 import utils
 import config
 import uvicorn
+from fastapi.responses import HTMLResponse
+
+if config.use_orjson:
+    from fastapi.responses import ORJSONResponse as JSONResponse
+else:
+    from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
@@ -52,7 +57,7 @@ def getFreeTask(user_agent: Annotated[Union[str, None], Header()] = None):
     t = db.get_free_subtask()
     if not(t):
         return JSONResponse({"ok": False, "desc": "no more tasks"}, status_code=404)
-    return JSONResponse({"ok": True, "data": t})
+    return JSONResponse(t)
 
 @app.get("/privateTask", response_class=JSONResponse)
 def getFreeTask(task_id: int, token: str):
@@ -96,7 +101,15 @@ def anonymousUpload(item: anondata):
 
 @app.get("/stats", response_class=utils.PrettyJSONResponse)
 def stats():
-    return utils.PrettyJSONResponse(db.get_stats())
+    if config.use_orjson:
+        return JSONResponse(db.get_stats())
+    else:
+        return utils.PrettyJSONResponse(db.get_stats())
+
+@app.get("/stats.html", response_class=utils.PrettyJSONResponse)
+def statspg():
+    with open("stats.html", "r", encoding="utf-8") as f:
+        return HTMLResponse(f.read())
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host=config.host, port=config.port, log_level="info")

@@ -2,7 +2,10 @@ from typing import Callable, Any
 from fastapi.routing import APIRoute
 from fastapi import Request, Response
 import zlib
-import json
+from config import use_orjson
+
+if not(use_orjson):
+    import json
 
 # GZIP SUPPORT
 
@@ -27,9 +30,4 @@ class GzipRoute(APIRoute):
 class PrettyJSONResponse(Response):
     media_type = "application/json"
     def render(self, content: Any) -> bytes:
-        return json.dumps(
-            content,
-            ensure_ascii=False,
-            indent=4,
-            separators=(", ", ": "),
-        ).encode("utf-8")
+        return json.dumps(content, ensure_ascii=False, indent=4).encode("utf-8")
