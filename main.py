@@ -67,7 +67,8 @@ async def register(username: str, password: str):
 ###
 
 @app.get("/auth", response_class=JSONResponse)
-def auth(credentials: Annotated[HTTPBasicCredentials, Depends(HTTPBasic())], user_agent: Annotated[Union[str, None], Header()] = None):
+def auth(credentials: HTTPBasicCredentials = Depends(security), user_agent: Union[str, None] = Header(default=None)):
+#def auth(credentials: Annotated[HTTPBasicCredentials, Depends(HTTPBasic())], user_agent: Annotated[Union[str, None], Header()] = None):
     if check_ua(user_agent):
         return JSONResponse({"ok": False, "desc": "old version", "version": version}, status_code=403)
     u = db.get_user(credentials.username, credentials.password)
