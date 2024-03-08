@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Авторизація</title>
+  
+</head>
+<style>
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 10% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#sendCoords {
+    text-align: center;
+    margin-top: 50px;
+}
+
+#sendCoords h2 {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+#sendCoords label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+#sendCoords input[type="text"] {
+    width: 200px;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+#sendCoords button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+#sendCoords button:hover {
+    background-color: #45a049;
+}
+
+</style>
+<body>
+  <h1 id="user-info"></h1>
+  
+  <button id="loginBtn">Авторизація</button>
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Авторизація</h2>
+      <form id="loginForm">
+        <label for="username">Логін:</label>
+        <input type="text" id="username" name="username">
+        <br>
+        <label for="password">Пароль:</label>
+        <input type="password" id="password" name="password">
+        <br>
+        <input type="submit" value="Увійти">
+      </form>
+    </div>
+  </div>
+  
+  <div id="sendCoords">
+    <h2>Введіть координати:</h2>
+    <label for="pos1">pos1:</label>
+    <input type="text" id="pos1" name="pos1">
+    <br>
+    <label for="pos2">pos2:</label>
+    <input type="text" id="pos2" name="pos2">
+    <br>
+    <button id="sendCoordsBtn">Відправити координати</button>
+</div>
+  
+  <script>
+  document.getElementById('loginBtn').addEventListener('click', function() {
+  document.getElementById('loginModal').style.display = 'block';
+});
+
+document.getElementsByClassName('close')[0].addEventListener('click', function() {
+  document.getElementById('loginModal').style.display = 'none';
+});
+
+</script>
+<script>
+//const apiUrl = 'https://wifibase.zapto.org:7000';
+
+function getCookie(cookieName) {
+  const name = cookieName + "=";
+  const decodedCookie = decodeURIComponent(document.cookie);
+  const cookieArray = decodedCookie.split(';');
+  for (let i = 0; i < cookieArray.length; i++) {
+    let cookie = cookieArray[i].trim();
+    if (cookie.indexOf(name) === 0) {
+      return cookie.substring(name.length, cookie.length);
+    }
+  }
+  return null; // Повертаємо null, якщо кукіс не знайдено
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const userInfoElement = document.getElementById('user-info');
+  const cook = getCookie('token');
+
+  if (cook) {
+    const cookieParts = cook.split(';');
+
+    let username, expirationTime;
+
+    for (let i = 0; i < cookieParts.length; i++) {
+      const cookiePair = cookieParts[i].split('=');
+      const key = cookiePair[0].trim();
+      const value = cookiePair[1].trim();
+
+      if (key === 'name') {
+        username = value;
+      } else if (key === 'expirationTime') {
+        expirationTime = value;
+      }
+    }
+
+    if (username) {
+      userInfoElement.textContent = `Користувач: ${username}`;
+      if (expirationTime) {
+        const expirationDate = new Date(parseInt(expirationTime) * 1000);
+        const currentTime = new Date();
+        if (expirationDate > currentTime) {
+          const timeRemaining = expirationDate - currentTime;
+          const secondsRemaining = Math.floor((timeRemaining / 1000) % 60);
+          const minutesRemaining = Math.floor((timeRemaining / (1000 * 60)) % 60);
+          const hoursRemaining = Math.floor((timeRemaining / (1000 * 60 * 60)) % 24);
+          userInfoElement.textContent += `, час закінчення кукіса: ${hoursRemaining} годин ${minutesRemaining} хвилин ${secondsRemaining} секунд`;
+        } else {
+          userInfoElement.textContent += ', кукіс закінчився';
+        }
+      }
+    } else {
+      userInfoElement.textContent = 'Користувач не авторизований';
+    }
+  } else {
+    userInfoElement.textContent = 'Користувач не авторизований';
+  }
+});
+
+////
+function setCookie(cookieName, cookieValue, minutesToExpire) {
+  const expirationDate = new Date();
+  expirationDate.setTime(expirationDate.getTime() + (minutesToExpire * 60 * 1000));
+  const expires = "expires=" + expirationDate.toUTCString();
+  document.cookie = cookieName + "=" + cookieValue + ";" + expires + ";path=/";
+}
+
+const cookieName = 'token'; //
+
+////////
+document.getElementById('loginForm').addEventListener('submit', async function(event) {
+  event.preventDefault(); // Prevent form submission
+  
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  
+  try {
+    //const response = await fetch(apiUrl + '/auth', {
+    const response = await fetch('/auth', {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Basic ' + btoa(username + ':' + password)
+      }
+    });
+
+    if (response.ok) {
+      // Авторизація пройшла успішно
+      const responseData = await response.json(); // Розпарсити JSON відповідь
+      const token = responseData.token; // 
+      
+      setCookie(cookieName, token, 30); // Встановлення кукіса з токеном та терміном дії 30 хвилин
+      
+      //alert('Токен успішно збережено у кукіс');
+      alert('Авторизація успішна');
+      console.log('Авторизація успішна');
+    } else {
+      // Помилка авторизації
+      alert('Помилка авторизації');
+      console.error('Помилка авторизації');
+    }
+  } catch (error) {
+    console.error('Помилка запиту:', error);
+  }
+});
+///////////
+
+document.getElementById('sendCoordsBtn').addEventListener('click', async function() {
+    const pos1 = document.getElementById('pos1').value;
+    const pos2 = document.getElementById('pos2').value;
+    const token = getCookie('token'); // Отримати токен з кукіса
+    const requestBody = {
+    token: token,
+    pos1: pos1,
+    pos2: pos2
+    };
+
+    try {
+       const response = await fetch('/setcoords', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+    });
+
+        if (response.ok) {
+            alert('Координати успішно відправлено');
+            alert(JSON.stringify(response));
+        } else {
+            alert('Помилка відправлення координат');
+            alert(JSON.stringify(response));
+            console.error('Помилка відправлення координат');
+        }
+    } catch (error) {
+        console.error('Помилка запиту:', error);
+    }
+});
+
+</script>
+  <script src="script.js"></script>
+</body>
+</html>
