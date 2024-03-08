@@ -50,6 +50,17 @@ def check_ua(ua):
     if ua is not None:
         return (ua.find("3wifiparser1.") != -1)
     return False
+###
+@app.post("/register", response_class=JSONResponse)
+async def register(username: str, password: str):
+    # Перевірка чи існує користувач з таким ім'ям
+    if db.get_user(username, password):
+        raise BaseException(status_code=400, detail="Username already exists")
+
+    # Реєстрація нового користувача
+    db.gen_user(username, password)
+    return JSONResponse({"ok": True, "message": "Registration successful"})
+###
 
 @app.get("/auth", response_class=JSONResponse)
 def auth(credentials: Annotated[HTTPBasicCredentials, Depends(HTTPBasic())], user_agent: Annotated[Union[str, None], Header()] = None):
