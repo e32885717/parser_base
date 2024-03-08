@@ -9,23 +9,22 @@ import db_structure
 
 if config.use_mariadb:
     import mariadb
-    database = mariadb.connect(
-        user="root",
-        password="parser_basetest",
-        host="127.0.0.1",
-        port=3306
-    )
+    database = mariadb.connect(user=config.maria_creds["user"], password=config.maria_creds["password"], host=config.maria_creds["host"], port=config.maria_creds["port"])
     cur = database.cursor()
     act = db_structure.mariadb_initcmd.split(";")
     for i in act:
         if len(i) != 0:
             cur.execute(i)
+    if config.allow_rsdump:
+        cur.execute(db_structure.mariadb_rsdump)
     cur.close()
 else:
     import sqlite3
     database = sqlite3.connect(config.sqlite_path, check_same_thread=False)
     cur = database.cursor()
     cur.executescript(db_structure.sqlite_initcmd)
+    if config.allow_rsdump:
+        cur.executescript(db_structure.sqlite_rsdump)
     cur.close()
 
 def get_user(user: str, passw: str):

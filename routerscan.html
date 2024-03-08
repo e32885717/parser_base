@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RS dump upload</title>
+    <style>body{font-family:Arial,sans-serif;margin:0;padding:0;background-color:#f4f4f4;display:flex;justify-content:center;align-items:center;height:100vh}.container{background-color:#fff;padding:20px;border-radius:20px;box-shadow:0 0 10px rgba(0,0,0,0.1);width:300px}h1{text-align:center}form{display:flex;flex-direction:column}input[type="file"]{margin-bottom:10px}select{margin-bottom:10px}input[type="submit"]{background-color:#4caf50;color:#fff;border:none;padding:10px 20px;cursor:pointer;border-radius:5px;transition:background-color .3s}input[type="submit"]:hover{background-color:#45a049}progress{width:100%;margin-top:10px;display:none}.error-container{max-height:200px;overflow-y:auto;margin-top:10px;color:red;text-align:center}</style>
+</head>
+<body>
+    <div class="container">
+        <h1>RS Dump Upload</h1>
+        <form action="routerscan" method="post" enctype="multipart/form-data" id="mainform" onsubmit="sumb()">
+            <input type="file" name="data" multiple>
+            <select name="ftype">
+                <option value="json">JSON</option>
+                <option value="csv">CSV</option>
+            </select>
+            <input type="submit" value="Upload">
+        </form>
+        <progress id="pgb" max="100" value="0">0%</progress>
+        <div id="errorContainer" class="error-container"></div>
+    </div>
+    <script>function sumb(){var e=document.querySelector("#mainform"),t=document.getElementById("errorContainer");if(t.innerHTML="",e[0].files.length>0){event.preventDefault();let n=100/e[0].files.length;document.querySelector("#pgb").style.display="block",document.querySelector("#pgb").value=0;const r=async r=>{const o=new FormData;o.append("ftype",e[1].value),o.append("data",r);try{if(!(await fetch("/routerscan",{method:"POST",body:o})).ok)throw new Error("Response not OK");document.querySelector("#pgb").value+=n}catch(e){var a=document.createElement("li");a.textContent="Ошибка при загрузке файла "+r.name,t.appendChild(a)}};Array.from(e[0].files).forEach(r)}}</script>
+</body>
+</html>
