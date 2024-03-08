@@ -8,7 +8,7 @@ port = 7000
 use_bcrypt = True
 use_orjson = False
 use_mariadb = False
-user_stats = False
+user_stats = True
 allow_rsdump = False
 
 maria_creds = {
