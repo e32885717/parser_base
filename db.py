@@ -3,6 +3,11 @@ import config
 import hashlib
 import random
 import salt
+import os
+
+script_directory = os.path.dirname(os.path.realpath(__file__))
+os.chdir(script_directory)
+
 if config.use_bcrypt:
     import bcrypt
 import db_structure
