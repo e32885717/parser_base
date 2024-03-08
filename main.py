@@ -9,6 +9,8 @@ import utils
 import config
 import uvicorn
 from fastapi.responses import HTMLResponse
+from coords import settasks
+
 
 if config.allow_rsdump:
     from fastapi import File, UploadFile, Form
@@ -177,5 +179,37 @@ def routerscanpg():
     with open("routerscan.html", "r", encoding="utf-8") as f:
         return f.read()
 
+###
+
+@app.get("/coords.html", response_class=utils.PrettyJSONResponse)
+def coords():
+    with open("coords.html", "r", encoding="utf-8") as f:
+        return HTMLResponse(f.read())
+
+
+
+class Coords(BaseModel):
+    token: str
+    pos1: str
+    pos2: str
+
+@app.post("/setcoords", response_class=JSONResponse)
+async def handle_data(item: Coords):
+    # Отримання даних з моделі item
+    token = item.token
+    pos1 = item.pos1
+    pos2 = item.pos2
+    
+    usid = check_token(token)
+    if usid == None:
+        return JSONResponse({"ok": False, "desc": "wrong token"}, status_code=401)
+    #
+    settasks(pos1, pos2)
+  
+    req = {"ok": True, "message": "Coordinates received successfully", "token": token, "pos1": pos1, "pos2": pos2}
+    #print(req)
+    return JSONResponse(req)
+    
+###
 if __name__ == "__main__":
     uvicorn.run("main:app", host=config.host, port=config.port, log_level="info")
