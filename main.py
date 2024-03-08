@@ -78,7 +78,8 @@ def auth(credentials: HTTPBasicCredentials = Depends(security), user_agent: Unio
         return JSONResponse({"ok": False, "desc": "auth failed", "version": version}, status_code=401)
 
 @app.get("/getFreeTask", response_class=JSONResponse)
-def getFreeTask(user_agent: Annotated[Union[str, None], Header()] = None):
+def getFreeTask(user_agent: Union[str, None] = None):
+#def getFreeTask(user_agent: Annotated[Union[str, None], Header()] = None):
     if check_ua(user_agent):
         return JSONResponse({"ok": False, "desc": "old version"}, status_code=403)
     t = db.get_free_subtask()
