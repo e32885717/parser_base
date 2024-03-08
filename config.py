@@ -2,7 +2,7 @@ sqlite_path = "main.db"
 
 task_delete_timeout = 120
 
-host = "0.0.0."
+host = "0.0.0.0"
 port = 7000
 
 use_bcrypt = True
