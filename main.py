@@ -11,6 +11,10 @@ import config
 import uvicorn
 from fastapi.responses import HTMLResponse
 from coords import settasks
+import os
+
+script_directory = os.path.dirname(os.path.realpath(__file__))
+os.chdir(script_directory)
 
 
 if config.allow_rsdump:
