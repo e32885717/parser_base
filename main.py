@@ -28,6 +28,7 @@ app = FastAPI()
 
 app.router.route_class = utils.GzipRoute
 version = 20
+security = HTTPBasic()
 tokens = []
 
 def random_str(n:int=40):
