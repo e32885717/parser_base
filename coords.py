@@ -63,6 +63,8 @@ def settasks(pos1, pos2):
       ram_safe = True
     reqs_len = partition_rectangle_cnt(min_maxTileX[0], min_maxTileY[0], x_len, y_len, max_area)
     cur = database.cursor()
+    cur.execute("INSERT INTO tasks (min_maxTileX, min_maxTileY, max_area) VALUES ((?),(?),(?))", (json.dumps(min_maxTileX), json.dumps(min_maxTileY), max_area))
+    #
     cur.execute("SELECT max(id) FROM tasks")
     task_id = cur.fetchone()[0]
 
