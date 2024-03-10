@@ -49,20 +49,27 @@ for place_id, place in places.items():
         continue
     ma_x, mi_x, ma_y, mi_y = 0, 180, 0, 180
     if str(place['relation_id']).startswith("way"):
-        elem1 = relations[str(place['relation_id'][3:])]
+        for node_in in relations[str(place['relation_id'][3:])]:
+            try:
+                elem2 = j['elements'][ids[str(node_in)]]
+                ma_x = max(ma_x, elem2['lat'])
+                mi_x = min(mi_x, elem2['lat'])
+                ma_y = max(ma_y, elem2['lon'])
+                mi_y = min(mi_y, elem2['lon'])
+            except:
+                pass      
     else:
         for i in relations[str(place['relation_id'])]['members']:
             if i['type'] == 'way' and i['role'] == 'outer':
-                elem1 = j['elements'][ids[str(i['ref'])]]['nodes']
-    for node_in in elem1:
-        try:
-            elem2 = j['elements'][ids[str(node_in)]]
-            ma_x = max(ma_x, elem2['lat'])
-            mi_x = min(mi_x, elem2['lat'])
-            ma_y = max(ma_y, elem2['lon'])
-            mi_y = min(mi_y, elem2['lon'])
-        except:
-            pass      
+                for node_in in j['elements'][ids[str(i['ref'])]]['nodes']:
+                    try:
+                        elem2 = j['elements'][ids[str(node_in)]]
+                        ma_x = max(ma_x, elem2['lat'])
+                        mi_x = min(mi_x, elem2['lat'])
+                        ma_y = max(ma_y, elem2['lon'])
+                        mi_y = min(mi_y, elem2['lon'])
+                    except:
+                        pass      
     place['ma_x'] = ma_x
     place['mi_x'] = mi_x
     place['ma_y'] = ma_y
